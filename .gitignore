@@ -4,3 +4,6 @@
 
 # Cmake
 cmake-build-debug/
+
+# Script stuff
+build/
