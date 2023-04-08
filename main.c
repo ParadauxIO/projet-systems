@@ -146,6 +146,7 @@ void print_file(const char *filename) {
         putchar(ch);
     }
 
+    printf("\n");
     fclose(file);
 }
 
