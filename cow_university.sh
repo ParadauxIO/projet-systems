@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <number>"
+  exit 1
+fi
+
 # Donne à cowsay 2 puisque c'est le seul nombre premier pair
 clear
 cowsay 2
