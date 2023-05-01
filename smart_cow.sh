@@ -6,12 +6,6 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 
-result=$(echo "$1" | bc -l)
-
-if ((result > 99))
-then
-  cowsay "Result too long"
-  exit 1
-fi
-
-cowsay -e $result $1
+result=$(echo "$1" | awk '{ printf "%.10f", $0 }')
+eyes=$(printf "%02d" $result)
+cowsay -e "$result" "The sum is: $1\nThe result is: $eyes"

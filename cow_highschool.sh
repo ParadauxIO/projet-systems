@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Assurez-vous que nous avons les arguments requis
 if [ $# -ne 1 ]; then
   echo "Usage: $0 <number>"
   exit 1
