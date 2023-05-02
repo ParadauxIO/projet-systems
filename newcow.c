@@ -1,165 +1,143 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Header
-char* read_input_from_stdin();
-char* read_input_from_command_line(int argc, char* argv[]);
-char** split_string(char* str);
-char* get_chars(char c, int n);
-void drawThoughtBox(char* input, char** substrings);
-void print_file(const char *filename);
+#define true 1
 
-//Constants
-#define MAX_LINE_LENGTH 39 // When to break sentences to the next line
+const char* COW_FORMAT[5] = {
+        "       ^__^\n",
+        "      (%s)\\_______\n", // Eyes
+        "     (__)\\        )\\/\\\n",
+        "      %s ||----w |\n", // Tongue
+        "%s" // Variable Height
+};
+
+const char *COW_LEG_LINE[3] = {
+    "       ||     ||\n",
+    "        ||     ||\n",
+    "         ||     ||\n"
+};
+
+
+char* repeat_string(const char* str, long N);
+void affiche_vache(char* eyes, char* tongue, long height, int frame, int x, int y);
+void update();
+void gotoxy(int x, int y);
 
 int main(int argc, char* argv[]) {
-    char *cowFile = "cows/default.cow";
+    int option;
+    char* valeurE = "oo";
+    char* valeurT = "  ";
+    long valeurHeight = 1;
+    char* endptr; // used in str to long conversion
+    while ((option = getopt(argc, argv, "e:T:H:h")) != -1) {
+        switch (option) {
+            // Eye String
+            case 'e':
+                valeurE = optarg;
+                break;
 
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-file") == 0 && i + 1 < argc) {
-            cowFile = argv[i+1];
+            // Tongue String
+            case 'T':
+                valeurT = optarg;
+                break;
+
+            case 'H':
+                valeurHeight = strtol(optarg, &endptr, 10);
+
+                // If there was an error converting the string
+                if (*endptr != '\0') {
+                    fprintf(stderr, "Error converting %s to a long.\n", optarg);
+                    exit(1);
+                }
+                break;
+
+            // Help / Usage Instructions.
+            case 'h':
+                printf("Usage: %s -e [v] -T [v] -h\n", argv[0]);
+                exit(0);
+                break;
+
+            default:
+                fprintf(stderr, "Usage: %s -e [v] -T [v] -h\n", argv[0]);
+                return 1;
         }
     }
 
-    char* input;
-
-    // Determine whether or not to read from stdin or the commandline
-    if (argc > 1) {
-        input = read_input_from_command_line(argc, argv);
-    } else {
-        input = read_input_from_stdin();
-    }
-
-    // Turn the input into a list of strings
-    char** substrings = split_string(input);
-
-    // Draw the textbox
-    drawThoughtBox(input, substrings);
-
-    // Draw the rest of the cow
-    print_file(cowFile);
-
-    free(input);
-    return 0;
-}
-
-void drawThoughtBox(char*input, char** substrings) {
-    unsigned long inputLength = strlen(input);
-    unsigned long lineCount = (inputLength + MAX_LINE_LENGTH - 1) / MAX_LINE_LENGTH;
-
-    unsigned long cowLineLength = (inputLength <= MAX_LINE_LENGTH ? inputLength : MAX_LINE_LENGTH) + 2;
-
-    // TODO free memory from get_chars
-    printf(" %s\n", get_chars('_', (int) cowLineLength));
-    for (int i = 0; i < lineCount; i++) {
-        if (i == 0) {
-            printf("/ %s \\\n", substrings[i]);
-        } else if (i == lineCount-1) {
-            char* extraSpaces = "";
-            unsigned long lastLineLength = strlen(substrings[i]);
-            if (lastLineLength < MAX_LINE_LENGTH) {
-                extraSpaces = get_chars(' ', (int) (MAX_LINE_LENGTH-lastLineLength));
-            }
-            printf("\\ %s%s /\n", substrings[i], extraSpaces);
-        } else {
-            printf("| %s |\n", substrings[i]);
+    int frame = 0;
+    int x = 50, y = 0;
+    while (true) {
+        affiche_vache(valeurE, valeurT, valeurHeight, frame, x, y);
+        usleep(200000); // Pause for 500 ms
+        update(x, y);
+        frame++;
+        if (frame > 2) {
+            frame = 0;
         }
-
-        free(substrings[i]);
+        x += 1;
+        y += 1;
     }
-
-    printf(" %s\n", get_chars('-', (int) cowLineLength));
 }
 
-// Take a string from stdin and return it
-char* read_input_from_stdin() {
-    char* input = NULL;
-    size_t len = 0;
-    ssize_t read;
-
-    read = getline(&input, &len, stdin);
-
-    if (read == -1) {
-        printf("Erreur: Pas de contenu dans STDIN.\n");
-        exit(EXIT_FAILURE);
+void affiche_vache(char* eyes, char* tongue, long height, int frame, int x, int y) {
+    if (strlen(eyes) != 2) {
+        fprintf(stderr, "Invalid eyes: %s. Must be exactly 2 characters.\n", eyes);
+        exit(1);
     }
 
-    // Remove the newline character at the end of the input
-    input[strcspn(input, "\n")] = '\0';
+    if (strlen(tongue) != 2) {
+        fprintf(stderr, "Invalid Tongue: %s. Must be exactly 2 characters.\n", tongue);
+        exit(1);
+    }
 
-    return input;
+    if (height < 1 || height > 10) {
+        fprintf(stderr, "Invalid Height, must be between 1 and 10\n");
+        exit(1);
+    }
+
+    if (frame > 2) {
+        fprintf(stderr, "Invalid Frame, must be between 0 and 2\n");
+        exit(1);
+    }
+
+    char* legs = repeat_string(COW_LEG_LINE[frame], height);
+    gotoxy(x, y);
+    printf("%s", COW_FORMAT[0]);
+    gotoxy(x, y+1);
+    printf(COW_FORMAT[1], eyes);
+    gotoxy(x, y+2);
+    printf("%s", COW_FORMAT[2]);
+    gotoxy(x, y+3);
+    printf(COW_FORMAT[3], tongue);
+    gotoxy(x, y+4);
+    printf(COW_FORMAT[4], legs);
+    free(legs);
 }
 
-char* read_input_from_command_line(int argc, char* argv[]) {
-    if (argc < 2) {
-        printf("Erreur: Aucun contenu fourni en argument.\n");
-        exit(EXIT_FAILURE);
+char* repeat_string(const char* str, long N) {
+    // Allocate memory for the new string
+    int len = (int) strlen(str);
+    char* new_str = (char*) malloc((N*len + 1) * sizeof(char));
+    if (new_str == NULL) {
+        fprintf(stderr, "Error: Failed to allocate memory for new string.\n");
+        exit(1);
     }
 
-    char* input = strdup(argv[1]);
+    // Copy N copies of the original string into the new string
+    for (int i = 0; i < N; i++) {
+        strcat(new_str, str);
+    }
 
-    return input;
+    return new_str;
 }
 
-char** split_string(char* str) {
-    const int MAX_LEN = 39;
-    unsigned long len = strlen(str);
-    int start = 0;
-    unsigned long substr_count = (len + MAX_LEN - 1) / MAX_LEN; // calculer le nombre de sous-chaînes nécessaires
-    char** substrs = (char**) malloc(substr_count * sizeof(char*)); // allouer de la mémoire pour le tableau de sous-chaînes
-
-    if (!substrs) {
-        printf("Erreur: Impossible d'allouer de la mémoire.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    for (int i = 0; i < substr_count; i++) {
-        unsigned long copy_len = len - start > MAX_LEN ? MAX_LEN : len - start;
-        substrs[i] = (char*) malloc((copy_len + 1) * sizeof(char)); // Pour la sous-chaîne
-        if (!substrs[i]) {
-            printf("Erreur: Impossible d'allouer de la mémoire. (II)\n");
-            exit(EXIT_FAILURE);
-        }
-
-        strncpy(substrs[i], str + start, copy_len);
-        substrs[i][copy_len] = '\0';
-        start += MAX_LEN;
-    }
-
-    return substrs;
+// \33[H is the cursor home sequence
+// \033[J is the clear screen sequence
+void update() {
+    printf("\033[2J"); // clear the screen
 }
 
-// Prenez le contenu du fichier au chemin fourni et imprimez son contenu
-void print_file(const char *filename) {
-    FILE *file;
-    char ch;
-
-    file = fopen(filename, "r");
-
-    if (file == NULL) {
-        printf("Erreur: Impossible d'ouvrir le fichier: %s\n", filename);
-        return;
-    }
-
-    while ((ch = (char) fgetc(file)) != EOF) {
-        putchar(ch);
-    }
-
-    printf("\n");
-    fclose(file);
-}
-
-// Prenez un caractère et un nombre et renvoyez une chaîne contenant autant de copies du caractère
-char* get_chars(char c, int n) {
-    char* str = (char*) malloc(sizeof(char) * (n + 1));
-
-    // Remplir la chaîne
-    for (int i = 0; i < n; i++) {
-        str[i] = c;
-    }
-
-    // "Null Terminate" la chaîne
-    str[n] = '\0';
-    return str;
+void gotoxy(int x, int y) {
+    printf("\033[%d;%dH", x, y);
 }

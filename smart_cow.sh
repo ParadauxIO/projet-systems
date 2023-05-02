@@ -8,4 +8,4 @@ fi
 
 result=$(echo "$1" | awk '{ printf "%.10f", $0 }')
 eyes=$(printf "%02d" $result)
-cowsay -e "$result" "The sum is: $1\nThe result is: $eyes"
+cowsay -e "$result" "The sum is: $1 The result is: $eyes"
