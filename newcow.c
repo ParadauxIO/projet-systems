@@ -21,7 +21,7 @@ const char *COW_LEG_LINE[3] = {
 
 
 char* repeat_string(const char* str, long N);
-void affiche_vache(char* eyes, char* tongue, long height, int frame, int x, int y);
+void affiche_vache(char* eyes, char* tongue, long height);
 void update();
 void gotoxy(int x, int y);
 
@@ -65,22 +65,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    int frame = 0;
-    int x = 50, y = 0;
-    while (true) {
-        affiche_vache(valeurE, valeurT, valeurHeight, frame, x, y);
-        usleep(200000); // Pause for 500 ms
-        update(x, y);
-        frame++;
-        if (frame > 2) {
-            frame = 0;
-        }
-        x += 1;
-        y += 1;
-    }
+    affiche_vache(valeurE, valeurT, valeurHeight);
 }
 
-void affiche_vache(char* eyes, char* tongue, long height, int frame, int x, int y) {
+void affiche_vache(char* eyes, char* tongue, long height) {
     if (strlen(eyes) != 2) {
         fprintf(stderr, "Invalid eyes: %s. Must be exactly 2 characters.\n", eyes);
         exit(1);
@@ -96,21 +84,11 @@ void affiche_vache(char* eyes, char* tongue, long height, int frame, int x, int 
         exit(1);
     }
 
-    if (frame > 2) {
-        fprintf(stderr, "Invalid Frame, must be between 0 and 2\n");
-        exit(1);
-    }
-
-    char* legs = repeat_string(COW_LEG_LINE[frame], height);
-    gotoxy(x, y);
+    char* legs = repeat_string(COW_LEG_LINE[2], height);
     printf("%s", COW_FORMAT[0]);
-    gotoxy(x, y+1);
     printf(COW_FORMAT[1], eyes);
-    gotoxy(x, y+2);
     printf("%s", COW_FORMAT[2]);
-    gotoxy(x, y+3);
     printf(COW_FORMAT[3], tongue);
-    gotoxy(x, y+4);
     printf(COW_FORMAT[4], legs);
     free(legs);
 }
