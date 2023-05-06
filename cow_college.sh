@@ -12,7 +12,7 @@ secondeFib=1
 
 # Donnez à Cowsay la première valeur et attendez
 clear
-cowsay $premierFib
+cowsay "$premierFib "
 sleep 1
 
 # boucle sur les nombres de Fibonacci inférieurs à le premier argument
@@ -35,4 +35,3 @@ while [ $secondeFib -lt "$1" ]; do
   # Attendez une seconde avant de continuer
   sleep 1
 done
-
