@@ -19,6 +19,7 @@ do
   sleep 1
 done
 
+# Montrer à nouveau le dernier carré avec une langue
 lastI=$((i - 1))
 clear
 cowsay -T "j" $lastI
