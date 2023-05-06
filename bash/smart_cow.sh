@@ -1,4 +1,5 @@
 #!/bin/bash
+# TODO
 
 # Passez le calcul à bc et cowsay le résultat
 if [ $# -ne 1 ]; then
@@ -7,5 +8,5 @@ if [ $# -ne 1 ]; then
 fi
 
 result=$(echo "$1" | awk '{ printf "%.10f", $0 }')
-eyes=$(printf "%02d" $result)
+eyes=$(printf "%02d" "$result")
 cowsay -e "$result" "The sum is: $1 The result is: $eyes"

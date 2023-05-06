@@ -46,26 +46,20 @@ int main(int argc, char* argv[]) {
         perror("Failed to open file");
         return 1;
     }
+
     strcpy(message, "");
     // Loop through every character in the file
     while ((ch = (char) fgetc(file)) != EOF) {
         // Do something with the character
         update();
 
-
-        char** substrings = split_string(message);
-
         message[lastArrIndex] = ch;
         lastArrIndex++;
+        char** substrings = split_string(message);
         drawThoughtBox(strlen(message), substrings);
         affiche_vache("oo", ch, 1);
         sleep(1);
     }
-
-    message[lastArrIndex] = ch;
-    lastArrIndex++;
-    drawThoughtBox(strlen(message), &message);
-    affiche_vache("oo", ch, 1);
 
     // Close the file
     fclose(file);

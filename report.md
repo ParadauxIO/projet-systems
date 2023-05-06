@@ -407,4 +407,18 @@ We then added an endless loop at the end of our  `main()`
 This loops through the values for x and y and has the cow move to the right
 and pauses for 200 ms before moving on.
 
-5. 
+5. Reading cow
+
+The first step to implementing the reading cow is to get the file specified by the user.
+This required an update to our main function which takes positional parameters after our
+`getopt` options:
+```c
+// NEW: Process files as specified by the user.
+char* file = argv[optind];
+
+if (file == NULL) {
+    printf("Specify a file to open.\n");
+    exit(1);
+}
+```
+

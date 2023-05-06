@@ -27,46 +27,14 @@ void update();
 void gotoxy(int x, int y);
 
 int main(int argc, char* argv[]) {
-    int option;
-    char* valeurE = "oo";
-    char* valeurT = "  ";
-    long valeurHeight = 1;
-    char* endptr; // used in str to long conversion
-    while ((option = getopt(argc, argv, "e:T:H:h")) != -1) {
-        switch (option) {
-            // Eye String
-            case 'e':
-                valeurE = optarg;
-                break;
+    char* file = argv[optind];
 
-            // Tongue String
-            case 'T':
-                valeurT = optarg;
-                break;
-
-            case 'H':
-                valeurHeight = strtol(optarg, &endptr, 10);
-
-                // If there was an error converting the string
-                if (*endptr != '\0') {
-                    fprintf(stderr, "Error converting %s to a long.\n", optarg);
-                    exit(1);
-                }
-                break;
-
-            // Help / Usage Instructions.
-            case 'h':
-                printf("Usage: %s -e [v] -T [v] -h\n", argv[0]);
-                exit(0);
-                break;
-
-            default:
-                fprintf(stderr, "Usage: %s -e [v] -T [v] -h\n", argv[0]);
-                return 1;
-        }
+    if (file == NULL) {
+        printf("Specify a file to open.\n");
+        exit(1);
     }
 
-    affiche_vache(valeurE, valeurT, valeurHeight);
+    affiche_vache("fe", "fe", 1);
 }
 
 void affiche_vache(char* eyes, char* tongue, long height) {
@@ -137,11 +105,6 @@ char* read_first_line(const char* file_path) {
 
     fclose(file);
     return line;
-}
-// \33[H is the cursor home sequence
-// \033[J is the clear screen sequence
-void update() {
-    printf("\033[2J"); // clear the screen
 }
 
 void gotoxy(int x, int y) {

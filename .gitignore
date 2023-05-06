@@ -2,8 +2,16 @@
 *.iml
 .idea/
 
+# vscode
+.vscode/
+
+# Test files
+*.test.c
+*.test
+*.test.sh
+
 # Cmake
 cmake-build-debug/
 
 # Script stuff
-build/
+c/build/
