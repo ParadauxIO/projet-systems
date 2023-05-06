@@ -5,19 +5,15 @@
 
 #define true 1
 
-const char* COW_FORMAT[5] = {
-        "       ^__^\n",
-        "      (%s)\\_______\n", // Eyes
-        "     (__)\\        )\\/\\\n",
-        "      %s ||----w |\n", // Tongue
-        "%s" // Variable Height
-};
+const char* COW_FORMAT =
+        "       ^__^\n"
+        "      (%s)\\_______\n" // Eyes
+        "     (__)\\        )\\/\\\n"
+        "      %s ||----w |\n" // Tongue
+        "%s"; // Variable Height
 
-const char *COW_LEG_LINE[3] = {
-    "       ||     ||\n",
-    "        ||     ||\n",
-    "         ||     ||\n"
-};
+const char *COW_LEG_LINE =
+    "         ||     ||\n";
 
 const int MAX_LINE_LENGTH = 100;
 
@@ -27,14 +23,47 @@ void update();
 void gotoxy(int x, int y);
 
 int main(int argc, char* argv[]) {
-    char* file = argv[optind];
+    int option;
+    char* valeurE = "oo";
+    char* valeurT = "  ";
+    long valeurHeight = 1;
+    char* endptr; // used in str to long conversion
+    while ((option = getopt(argc, argv, "e:T:H:h")) != -1) {
+        switch (option) {
+            // Eye String
+            case 'e':
+                valeurE = optarg;
+                break;
 
-    if (file == NULL) {
-        printf("Specify a file to open.\n");
-        exit(1);
+                // Tongue String
+            case 'T':
+                valeurT = optarg;
+                break;
+
+            case 'H':
+                valeurHeight = strtol(optarg, &endptr, 10);
+
+                // If there was an error converting the string
+                if (*endptr != '\0') {
+                    fprintf(stderr, "Error converting %s to a long.\n", optarg);
+                    exit(1);
+                }
+                break;
+
+                // Help / Usage Instructions.
+            case 'h':
+                printf("Usage: %s -e [v] -T [v] -h\n", argv[0]);
+                exit(0);
+                break;
+
+            default:
+                fprintf(stderr, "Usage: %s -e [v] -T [v] -h\n", argv[0]);
+                return 1;
+        }
     }
 
-    affiche_vache("fe", "fe", 1);
+    affiche_vache(valeurE, valeurT, valeurHeight);
+    return 0;
 }
 
 void affiche_vache(char* eyes, char* tongue, long height) {
@@ -53,12 +82,8 @@ void affiche_vache(char* eyes, char* tongue, long height) {
         exit(1);
     }
 
-    char* legs = repeat_string(COW_LEG_LINE[2], height);
-    printf("%s", COW_FORMAT[0]);
-    printf(COW_FORMAT[1], eyes);
-    printf("%s", COW_FORMAT[2]);
-    printf(COW_FORMAT[3], tongue);
-    printf(COW_FORMAT[4], legs);
+    char* legs = repeat_string(COW_LEG_LINE, height);
+    printf(COW_FORMAT, eyes, tongue, legs);
     free(legs);
 }
 
