@@ -19,8 +19,6 @@ const int MAX_LINE_LENGTH = 100;
 
 char* repeat_string(const char* str, long N);
 void affiche_vache(char* eyes, char* tongue, long height);
-void update();
-void gotoxy(int x, int y);
 
 int main(int argc, char* argv[]) {
     int option;
@@ -130,8 +128,4 @@ char* read_first_line(const char* file_path) {
 
     fclose(file);
     return line;
-}
-
-void gotoxy(int x, int y) {
-    printf("\033[%d;%dH", x, y);
 }
