@@ -1,12 +1,12 @@
 #!/bin/bash
-# TODO
-
-# Passez le calcul à bc et cowsay le résultat
-if [ $# -ne 1 ]; then
-  echo "Usage: $0 <sum>"
-  exit 1
+if ! result=$(bc <<< "$1"); then
+  echo "Invalid sum"
+  exit
 fi
 
-result=$(echo "$1" | awk '{ printf "%.10f", $0 }')
-eyes=$(printf "%02d" "$result")
-cowsay -e "$result" "The sum is: $1 The result is: $eyes"
+if [ "$result" -gt 99 ]; then
+    # If the result is greater than 99, add the result to what the cow is saying
+    cowsay "Expression: $1 Result: $result"
+else
+      cowsay -e " $result" "$1"
+fi
