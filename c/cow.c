@@ -5,6 +5,7 @@
 #define LIFEROCKS 0
 #define LIFESUCKS 1
 #define BYEBYELIFE 2
+#define EXITGAME 3
 
 #define STARVING 0
 #define OVERFED 10
@@ -12,21 +13,31 @@
 #define MIN_STOCK 0
 #define MAX_STOCK 10
 
+#define COWJOBFIRING 0
+#define COWJOBPROMOTION 1
+
+const int EVENT_PROBABILITIES[] = {25, 25}; // 25% chance of firing, 25% chance of promotion, arbitrary choice of values
+
 const char* COW_FORMAT =
         "       ^__^\n"
         "      (%s)\\_______\n" // Eyes
         "     (__)\\        )\\/\\\n"
         "      %s ||----w |\n" // Tongue
-        "         ||     ||\n"; // Variable Height
+        "         ||     ||\n"; 
 
 int main() {
+    // Initialize cow's starting state and attributes
     int cow_state = LIFEROCKS;
     int cow_health = 5;
     int stock = 5;
+    int score = 0;
+    int event = -1;
 
+    // Seed the random number generator with current time
     srand(time(NULL));
 
-    while (cow_state != BYEBYELIFE) {
+    // Start the game loop
+    while (cow_state != EXITGAME) {
         // Draw cow health automaton
         switch (cow_state) {
             case LIFEROCKS:
@@ -40,17 +51,25 @@ int main() {
                 break;
 
             case BYEBYELIFE:
-                printf("Byebyelife (Dead)\n");
-                printf(COW_FORMAT, "xx", "  ");
+                // Exit the game loop if cow is dead
+                cow_state = EXITGAME;
                 break;
         }
 
-        printf("Cow's health level: %d\n", cow_health);
         printf("Current stock level: %d\n", stock);
 
-        int lunchfood;
+        // Declare a char array to store the user's input
+        char input[10];
+
         printf("Enter amount of food to feed cow (0-%d): ", stock);
-        scanf("%d", &lunchfood);
+        fgets(input, sizeof(input), stdin);
+
+        int lunchfood;
+        
+        if (sscanf(input, "%d", &lunchfood) != 1) {
+            printf("Invalid input. Enter a valid integer between 0 and %d.\n", stock);
+            continue;
+        }
 
         if (lunchfood < 0 || lunchfood > stock) {
             printf("Invalid input. Enter a value between 0 and %d.\n", stock);
@@ -70,8 +89,31 @@ int main() {
         // Update stock level based on crop
         stock += crop;
 
+        // Reset event at the start of each iteration
+        event = -1;
+        if (rand() % 100 < EVENT_PROBABILITIES[COWJOBFIRING]) {
+            event = COWJOBFIRING;
+        } else if (rand() % 100 < EVENT_PROBABILITIES[COWJOBPROMOTION]) {
+            event = COWJOBPROMOTION;
+        }
+
+        if (event == COWJOBFIRING) {
+            printf("Oh no! You've been fired from your cow job at the cow factory, lose stock!\n");
+            stock -= (rand() % 3 + 1);
+        } else if (event == COWJOBPROMOTION) {
+            printf("Woohoo! You've been promoted at your cow job, gain stock!\n");
+            stock += (rand() % 3 + 1);
+        }
+
+        // Check if cow starved
+        if (cow_health <= STARVING) {
+            printf("Your cow starved! Game over!\n");
+            cow_state = BYEBYELIFE;
+            break;
+        }
         // Check if cow is overfed
         if (cow_health >= OVERFED) {
+            printf("You overfed your cow! Game over!\n");
             cow_state = BYEBYELIFE;
             break;
         }
@@ -89,8 +131,12 @@ int main() {
         } else if (stock > MAX_STOCK) {
             stock = MAX_STOCK;
         }
-        printf("crop: %d\n", crop);
-        printf("digestion: %d\n", digestion);
+        
+        //Useful for person correcting this to verify it works
+        // printf("Crop: %d\n", crop);
+        // printf("Digestion: %d\n", digestion);
+        // printf("Cow's health level: %d\n", cow_health);
+
         // Check cow's health level and update state
         if (cow_health <= STARVING) {
             cow_state = BYEBYELIFE;
@@ -99,9 +145,10 @@ int main() {
         } else {
             cow_state = LIFEROCKS;
         }
+        score++;
     }
-
-    printf("Your cow is dead. Game over!\n");
-
+    //print score (+1 each turn) and dead cow
+    printf("Score: %d\n", score);
+    printf(COW_FORMAT, "xx", "  ");
     return 0;
 }
