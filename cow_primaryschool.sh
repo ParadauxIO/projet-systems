@@ -18,3 +18,7 @@ do
   # Attendez une seconde avant de continuer
   sleep 1
 done
+
+lastI=$((i - 1))
+clear
+cowsay -T "j" $lastI

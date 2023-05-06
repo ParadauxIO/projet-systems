@@ -12,3 +12,6 @@ do
   # Attendez une seconde avant de continuer
   sleep 1
 done
+
+clear
+cowsay -T "j" 10
