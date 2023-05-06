@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 
 #define LIFEROCKS 0
 #define LIFESUCKS 1
@@ -10,47 +12,40 @@
 #define MIN_STOCK 0
 #define MAX_STOCK 10
 
-
+const char* COW_FORMAT =
+        "       ^__^\n"
+        "      (%s)\\_______\n" // Eyes
+        "     (__)\\        )\\/\\\n"
+        "      %s ||----w |\n" // Tongue
+        "         ||     ||\n"; // Variable Height
 
 int main() {
     int cow_state = LIFEROCKS;
     int cow_health = 5;
     int stock = 5;
 
+    srand(time(NULL));
+
     while (cow_state != BYEBYELIFE) {
         // Draw cow health automaton
         switch (cow_state) {
             case LIFEROCKS:
                 printf("Liferocks (Healthy)\n");
-                //printf(COW_FORMAT, "uu", "U", 1);
-                printf("         \\   ^__^\n");
-                printf("          \\  (uu)\\_______\n");
-                printf("             (__)\\       )\\\n");
-                printf("              U  ||----w | \\__/\n");
-                printf("                 ||     ||\n");
+                printf(COW_FORMAT, "uu", "U ");
                 break;
 
             case LIFESUCKS:
                 printf("Lifesucks (Unwell)\n");
-                printf("         \\   ^__^\n");
-                printf("          \\  (VV)\\_______\n");
-                printf("             (__)\\       )\\\n");
-                printf("              U  ||----w | \\__/\n");
-                printf("                 ||     ||\n");
+                printf(COW_FORMAT, "VV", "j ");
                 break;
 
             case BYEBYELIFE:
                 printf("Byebyelife (Dead)\n");
-                printf("         \\   ^__^\n");
-                printf("          \\  (XX)\\_______\n");
-                printf("             (__)\\       )\\\n");
-                printf("              U  ||----w | \\__/\n");
-                printf("                 ||     ||\n");
+                printf(COW_FORMAT, "xx", "  ");
                 break;
         }
 
         printf("Cow's health level: %d\n", cow_health);
-
         printf("Current stock level: %d\n", stock);
 
         int lunchfood;
