@@ -3,26 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define true 1
-
-const char* COW_FORMAT[5] = {
-        "       ^__^\n",
-        "      (%s)\\_______\n", // Eyes
-        "     (__)\\        )\\/\\\n",
-        "      %s ||----w |\n", // Tongue
+const char* COW_FORMAT = {
+        "\\   ^__^\n"
+        " \\  (%s)\\_______\n" // Eyes
+        "    (__)\\        )\\/\\\n"
+        "     %s ||----w |\n" // Tongue
         "%s" // Variable Height
 };
 
-const char *COW_LEG_LINE[3] = {
-    "       ||     ||\n",
-    "        ||     ||\n",
-    "         ||     ||\n"
-};
-
-const int MAX_LINE_LENGTH = 100;
+const char* COW_LEG_LINE = "        ||     ||\n";
 
 char* repeat_string(const char* str, long N);
-void affiche_vache(char* eyes, char* tongue, long height);
+void affiche_vache(char* eyes, char* tongue, long height, int frame);
 void update();
 void gotoxy(int x, int y);
 
@@ -39,7 +31,7 @@ int main(int argc, char* argv[]) {
                 valeurE = optarg;
                 break;
 
-            // Tongue String
+                // Tongue String
             case 'T':
                 valeurT = optarg;
                 break;
@@ -54,7 +46,7 @@ int main(int argc, char* argv[]) {
                 }
                 break;
 
-            // Help / Usage Instructions.
+                // Help / Usage Instructions.
             case 'h':
                 printf("Usage: %s -e [v] -T [v] -h\n", argv[0]);
                 exit(0);
@@ -66,10 +58,18 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    affiche_vache(valeurE, valeurT, valeurHeight);
+    int frame = 0;
+    while (1) {
+        affiche_vache(valeurE, valeurT, valeurHeight, frame);
+        usleep(500000); // Pause for 500 ms
+        update();
+        frame = (frame + 1) % 2;
+    }
+
+    return 0;
 }
 
-void affiche_vache(char* eyes, char* tongue, long height) {
+void affiche_vache(char* eyes, char* tongue, long height, int frame) {
     if (strlen(eyes) != 2) {
         fprintf(stderr, "Invalid eyes: %s. Must be exactly 2 characters.\n", eyes);
         exit(1);
@@ -85,19 +85,15 @@ void affiche_vache(char* eyes, char* tongue, long height) {
         exit(1);
     }
 
-    char* legs = repeat_string(COW_LEG_LINE[2], height);
-    printf("%s", COW_FORMAT[0]);
-    printf(COW_FORMAT[1], eyes);
-    printf("%s", COW_FORMAT[2]);
-    printf(COW_FORMAT[3], tongue);
-    printf(COW_FORMAT[4], legs);
+    char* legs = repeat_string(COW_LEG_LINE, height);
+    printf(COW_FORMAT[frame], eyes, tongue, legs);
     free(legs);
 }
 
 char* repeat_string(const char* str, long N) {
-    // Allocate memory for the new string
+// Allocate memory for the new string
     int len = (int) strlen(str);
-    char* new_str = (char*) malloc((N*len + 1) * sizeof(char));
+    char *new_str = (char *) malloc((N * len + 1) * sizeof(char));
     if (new_str == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for new string.\n");
         exit(1);
@@ -111,37 +107,10 @@ char* repeat_string(const char* str, long N) {
     return new_str;
 }
 
-char* read_first_line(const char* file_path) {
-    FILE* file = fopen(file_path, "r");
-    if (file == NULL) {
-        printf("Error: unable to open the file %s\n", file_path);
-        return NULL;
-    }
-
-    char* line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    read = getline(&line, &len, file);
-
-    if (read == -1) {
-        printf("Error: unable to read the first line of the file %s\n", file_path);
-        free(line);
-        fclose(file);
-        return NULL;
-    }
-
-    // Remove newline character if present
-    if (line[read - 1] == '\n') {
-        line[read - 1] = '\0';
-    }
-
-    fclose(file);
-    return line;
-}
 // \33[H is the cursor home sequence
 // \033[J is the clear screen sequence
 void update() {
-    printf("\033[2J"); // clear the screen
+    printf("\33[H\033[J");
 }
 
 void gotoxy(int x, int y) {
