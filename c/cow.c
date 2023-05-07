@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #define LIFEROCKS 0
 #define LIFESUCKS 1
@@ -16,6 +18,8 @@
 #define COWJOBFIRING 0
 #define COWJOBPROMOTION 1
 
+#define MAX_SCORES 5
+
 const int EVENT_PROBABILITIES[] = {25, 25}; // 25% chance of firing, 25% chance of promotion, arbitrary choice of values
 
 const char* COW_FORMAT =
@@ -24,6 +28,9 @@ const char* COW_FORMAT =
         "     (__)\\        )\\/\\\n"
         "      %s ||----w |\n" // Tongue
         "         ||     ||\n"; 
+
+void show_scores();
+void save_score(int score);
 
 int main() {
     // Initialize cow's starting state and attributes
@@ -147,8 +154,101 @@ int main() {
         }
         score++;
     }
-    //print score (+1 each turn) and dead cow
-    printf("Score: %d\n", score);
     printf(COW_FORMAT, "xx", "  ");
+    //print score (+1 each turn)
+    printf("Score: %d\n", score);
+    save_score(score);
+    show_scores();
     return 0;
 }
+
+struct score {
+    int value;
+    char name[50];
+};
+
+void save_score(int score) {
+    struct score scores[MAX_SCORES];
+    int i, j, inserted = 0;
+
+    // Open the scores file for reading and writing
+    FILE* file = fopen("scores.txt", "r+");
+    if (file == NULL) {
+        printf("Error: Could not open scores file\n");
+        return;
+    }
+
+    // Read the scores from the file
+    for (i = 0; i < MAX_SCORES; i++) {
+        if (fscanf(file, "%d %s\n", &scores[i].value, scores[i].name) != 2) {
+            scores[i].value = 0;
+            strcpy(scores[i].name, "");
+        }
+    }
+
+    // Insert the new score into the list
+    for (i = 0; i < MAX_SCORES; i++) {
+        if (score > scores[i].value) {
+            // Shift the other scores down
+            for (j = MAX_SCORES - 1; j > i; j--) {
+                scores[j] = scores[j-1];
+            }
+
+            // Insert the new score
+            scores[i].value = score;
+            printf("Congratulations! You have a new high score of %d.\n", score);
+            printf("Enter your name: ");
+            scanf("%s", scores[i].name);
+            inserted = 1;
+            break;
+        }
+    }
+
+    // If the new score was not inserted, do not update the file
+    if (!inserted) {
+        printf("Sorry, your score of %d did not make it to the top %d.\n", score, MAX_SCORES);
+        fclose(file);
+        return;
+    }
+
+    // Truncate the file and write the new scores to it
+    fseek(file, 0, SEEK_SET);
+    ftruncate(fileno(file), 0);
+    for (i = 0; i < MAX_SCORES; i++) {
+        fprintf(file, "%d %s\n", scores[i].value, scores[i].name);
+    }
+
+    fclose(file);
+}
+
+void show_scores() {
+    struct score scores[MAX_SCORES];
+    int i;
+
+    // Open the scores file for reading
+    FILE* file = fopen("scores.txt", "r");
+    if (file == NULL) {
+        printf("Error: Could not open scores file\n");
+        return;
+    }
+
+    // Read the scores from the file
+    for (i = 0; i < MAX_SCORES; i++) {
+        if (fscanf(file, "%d %s\n", &scores[i].value, scores[i].name) != 2) {
+            scores[i].value = 0;
+            strcpy(scores[i].name, "");
+        }
+    }
+
+    // Display the scores
+    printf("High Scores:\n");
+    printf("-------------\n");
+    for (i = 0; i < MAX_SCORES; i++) {
+        if (strlen(scores[i].name) > 0) {
+            printf("%d. %s: %d\n", i+1, scores[i].name, scores[i].value);
+        }
+    }
+
+    fclose(file);
+}
+
