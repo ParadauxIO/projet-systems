@@ -135,10 +135,11 @@ int main() {
             sprintf(event_message, "Woohoo! You've been promoted at your cow job, gain stock!\n");
             stock += (rand_range(1, 3));
         }
-
-        printf("Crop: %d\n", crop);
-        printf("Digestion: %d\n", digestion);
-        printf("Cow's health level: %d\n", cow_health);
+        
+        // Useful for person correcting this
+        // printf("Crop: %d\n", crop);
+        // printf("Digestion: %d\n", digestion);
+        // printf("Cow's health level: %d\n", cow_health);
 
         // Check if cow starved
         if (cow_health <= STARVING) {
