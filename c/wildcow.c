@@ -166,5 +166,5 @@ void gotoxy(int x, int y) {
 }
 
 void update() {
-    printf ("\033[H\033[J");
+    printf("\033[H\033[J");
 }

@@ -4,36 +4,31 @@
 #include <string.h>
 #include <unistd.h>
 
-//Check if user is on Windows/UNIX so we can clear console on both
-#ifdef _WIN32
-#define CLEAR "cls"
-#else
-#define CLEAR "clear"
-#endif
-
-//Cow states
+// Cow states
 #define LIFEROCKS 0
 #define LIFESUCKS 1
 #define BYEBYELIFE 2
 #define EXITGAME 3
 
-//Cow health levels
+// Cow health levels
 #define STARVING 0
 #define OVERFED 10
 
-//Min/Max food stock levels
+// Min - Max food stock levels
 #define MIN_STOCK 0
 #define MAX_STOCK 10
 
-//Random events
-#define COWJOBFIRING 0
-#define COWJOBPROMOTION 1
-const int EVENT_PROBABILITIES[] = {25, 25}; // 25% chance of firing, 25% chance of promotion, arbitrary choice of values
+// Random events
+#define COW_JOB_FIRING 0
+#define COW_JOB_PROMOTION 1
 
-//Maximum number of scores saved on the leaderboard
+// 25% chance of firing, 25% chance of promotion, arbitrary choice of values
+const int EVENT_PROBABILITIES[] = {25, 25};
+
+// Maximum number of scores saved on the leaderboard
 #define MAX_SCORES 5
 
-//Cow ASCII art
+// Cow ASCII art
 const char* COW_FORMAT =
         "       ^__^\n"
         "      (%s)\\_______\n" // Eyes
@@ -43,6 +38,7 @@ const char* COW_FORMAT =
 
 void show_scores();
 void save_score(int score);
+void update();
 
 int main() {
     // Initialize cow's starting state and attributes
@@ -52,7 +48,6 @@ int main() {
     int score = 0;
     int event = -1;
 
-    // Variables to store the messages from previous iteration
     char invalid_input_message[100] = "";
     char event_message[100] = "";
 
@@ -63,7 +58,7 @@ int main() {
     while (cow_state != EXITGAME) {
         
         // Clear the console screen
-        system(CLEAR);
+        update();
 
         // Print the messages from the previous iteration
         printf("%s%s", invalid_input_message, event_message);
@@ -72,7 +67,7 @@ int main() {
         strcpy(invalid_input_message, "");
         strcpy(event_message, "");
 
-        // Draw cow health automaton
+        // Draw the cow to represent its respective state
         switch (cow_state) {
             case LIFEROCKS:
                 printf("Liferocks (Healthy)\n");
@@ -95,19 +90,19 @@ int main() {
         // Get user input
         char input[10];
 
-        printf("Enter amount of food to feed cow (0-%d): ", stock);
+        printf("Enter amount of food to feed the cow (0-%d): ", stock);
         fgets(input, sizeof(input), stdin);
 
         int lunchfood;
         
         if (sscanf(input, "%d", &lunchfood) != 1) {
             sprintf(invalid_input_message, "Invalid input. Enter a valid integer between 0 and %d.\n", stock);
-            return;
+            continue;
         }
 
         if (lunchfood < 0 || lunchfood > stock) {
             sprintf(invalid_input_message, "Invalid input. Enter a value between 0 and %d.\n", stock);
-            return;
+            continue;
         }
 
         // Generate random digestion value
@@ -125,30 +120,31 @@ int main() {
 
         // Reset event at the start of each iteration
         event = -1;
-        if (rand() % 100 < EVENT_PROBABILITIES[COWJOBFIRING]) {
-            event = COWJOBFIRING;
-        } else if (rand() % 100 < EVENT_PROBABILITIES[COWJOBPROMOTION]) {
-            event = COWJOBPROMOTION;
+        if (rand() % 100 < EVENT_PROBABILITIES[COW_JOB_FIRING]) {
+            event = COW_JOB_FIRING;
+        } else if (rand() % 100 < EVENT_PROBABILITIES[COW_JOB_PROMOTION]) {
+            event = COW_JOB_PROMOTION;
         }
 
-        if (event == COWJOBFIRING) {
+        if (event == COW_JOB_FIRING) {
             sprintf(event_message, "Oh no! You've been fired from your cow job at the cow factory, lose stock!\n");
             stock -= (rand() % 3 + 1);
-        } else if (event == COWJOBPROMOTION) {
+        } else if (event == COW_JOB_PROMOTION) {
             sprintf(event_message, "Woohoo! You've been promoted at your cow job, gain stock!\n");
             stock += (rand() % 3 + 1);
         }
 
         // Check if cow starved
         if (cow_health <= STARVING) {
-            system(CLEAR);
+            update();
             printf("Your cow starved! Game over!\n");
             cow_state = BYEBYELIFE;
             break;
         }
+
         // Check if cow is overfed
         if (cow_health >= OVERFED) {
-            system(CLEAR); 
+            update();
             printf("You overfed your cow! Game over!\n");
             cow_state = BYEBYELIFE;
             break;
@@ -168,7 +164,7 @@ int main() {
             stock = MAX_STOCK;
         }
         
-        //Useful for person correcting this to verify it works
+        // Useful for person correcting this to verify it works
         // printf("Crop: %d\n", crop);
         // printf("Digestion: %d\n", digestion);
         // printf("Cow's health level: %d\n", cow_health);
@@ -184,7 +180,7 @@ int main() {
         score++;
     }
     printf(COW_FORMAT, "xx", "  ");
-    //print score (+1 each turn)
+    // print score (+1 each turn)
     printf("Score: %d\n", score);
     save_score(score);
     show_scores();
@@ -199,7 +195,7 @@ struct score {
 
 void save_score(int score) {
     struct score scores[MAX_SCORES];
-    //inserted tracks if the score was added to the high scores
+    // inserted tracks if the score was added to the high scores
     int i, j, inserted = 0;
     time_t t;
     struct tm* tm_info;
@@ -254,7 +250,7 @@ void save_score(int score) {
 
     // Truncate the file and write the new scores to it
     fseek(file, 0, SEEK_SET);
-    ftruncate(fileno(file), 0);
+    ftruncate(filen  o(file), 0);
     for (i = 0; i < MAX_SCORES; i++) {
         fprintf(file, "%d %s %s\n", scores[i].value, scores[i].name, scores[i].date);
     }
@@ -293,4 +289,8 @@ void show_scores() {
     }
 
     fclose(file);
+}
+
+void update() {
+    printf("\033[H\033[J");
 }
