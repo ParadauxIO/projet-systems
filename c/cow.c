@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
+//Cow states
 #define LIFEROCKS 0
 #define LIFESUCKS 1
 #define BYEBYELIFE 2
@@ -15,9 +16,11 @@
 #define MIN_STOCK 0
 #define MAX_STOCK 10
 
+//Random events
 #define COWJOBFIRING 0
 #define COWJOBPROMOTION 1
 
+//Maximum number of scores saved on the leaderboard
 #define MAX_SCORES 5
 
 const int EVENT_PROBABILITIES[] = {25, 25}; // 25% chance of firing, 25% chance of promotion, arbitrary choice of values
@@ -187,6 +190,7 @@ struct score {
 
 void save_score(int score) {
     struct score scores[MAX_SCORES];
+    //inserted tracks if the score was added to the high scores
     int i, j, inserted = 0;
     time_t t;
     struct tm* tm_info;
