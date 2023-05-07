@@ -4,27 +4,36 @@
 #include <string.h>
 #include <unistd.h>
 
+//Check if user is on Windows/UNIX so we can clear console on both
+#ifdef _WIN32
+#define CLEAR "cls"
+#else
+#define CLEAR "clear"
+#endif
+
 //Cow states
 #define LIFEROCKS 0
 #define LIFESUCKS 1
 #define BYEBYELIFE 2
 #define EXITGAME 3
 
+//Cow health levels
 #define STARVING 0
 #define OVERFED 10
 
+//Min/Max food stock levels
 #define MIN_STOCK 0
 #define MAX_STOCK 10
 
 //Random events
 #define COWJOBFIRING 0
 #define COWJOBPROMOTION 1
+const int EVENT_PROBABILITIES[] = {25, 25}; // 25% chance of firing, 25% chance of promotion, arbitrary choice of values
 
 //Maximum number of scores saved on the leaderboard
 #define MAX_SCORES 5
 
-const int EVENT_PROBABILITIES[] = {25, 25}; // 25% chance of firing, 25% chance of promotion, arbitrary choice of values
-
+//Cow ASCII art
 const char* COW_FORMAT =
         "       ^__^\n"
         "      (%s)\\_______\n" // Eyes
@@ -43,7 +52,7 @@ int main() {
     int score = 0;
     int event = -1;
 
-    // Variables to store the messages from previous loop
+    // Variables to store the messages from previous iteration
     char invalid_input_message[100] = "";
     char event_message[100] = "";
 
@@ -53,8 +62,8 @@ int main() {
     // Start the game loop
     while (cow_state != EXITGAME) {
         
-        // Clear the console, assumes unix throughout
-        system("clear"); // Unix
+        // Clear the console screen
+        system(CLEAR);
 
         // Print the messages from the previous iteration
         printf("%s%s", invalid_input_message, event_message);
@@ -83,7 +92,7 @@ int main() {
 
         printf("Current stock level: %d\n", stock);
 
-        // Declare a char array to store the user's input
+        // Get user input
         char input[10];
 
         printf("Enter amount of food to feed cow (0-%d): ", stock);
@@ -93,12 +102,12 @@ int main() {
         
         if (sscanf(input, "%d", &lunchfood) != 1) {
             sprintf(invalid_input_message, "Invalid input. Enter a valid integer between 0 and %d.\n", stock);
-            continue;
+            return;
         }
 
         if (lunchfood < 0 || lunchfood > stock) {
             sprintf(invalid_input_message, "Invalid input. Enter a value between 0 and %d.\n", stock);
-            continue;
+            return;
         }
 
         // Generate random digestion value
@@ -132,14 +141,14 @@ int main() {
 
         // Check if cow starved
         if (cow_health <= STARVING) {
-            system("clear");
+            system(CLEAR);
             printf("Your cow starved! Game over!\n");
             cow_state = BYEBYELIFE;
             break;
         }
         // Check if cow is overfed
         if (cow_health >= OVERFED) {
-            system("clear"); 
+            system(CLEAR); 
             printf("You overfed your cow! Game over!\n");
             cow_state = BYEBYELIFE;
             break;
