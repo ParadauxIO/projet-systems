@@ -165,11 +165,20 @@ int main() {
 struct score {
     int value;
     char name[50];
+    char date[11];
 };
 
 void save_score(int score) {
     struct score scores[MAX_SCORES];
     int i, j, inserted = 0;
+    time_t t;
+    struct tm* tm_info;
+    char date_string[20];
+
+    // Get the current date
+    time(&t);
+    tm_info = localtime(&t);
+    strftime(date_string, sizeof(date_string), "%Y-%m-%d", tm_info);
 
     // Open the scores file for reading and writing
     FILE* file = fopen("scores.txt", "r+");
@@ -180,9 +189,10 @@ void save_score(int score) {
 
     // Read the scores from the file
     for (i = 0; i < MAX_SCORES; i++) {
-        if (fscanf(file, "%d %s\n", &scores[i].value, scores[i].name) != 2) {
+        if (fscanf(file, "%d %s %s\n", &scores[i].value, scores[i].name, scores[i].date) != 3) {
             scores[i].value = 0;
             strcpy(scores[i].name, "");
+            strcpy(scores[i].date, "");
         }
     }
 
@@ -199,6 +209,7 @@ void save_score(int score) {
             printf("Congratulations! You have a new high score of %d.\n", score);
             printf("Enter your name: ");
             scanf("%s", scores[i].name);
+            strcpy(scores[i].date, date_string);
             inserted = 1;
             break;
         }
@@ -215,7 +226,7 @@ void save_score(int score) {
     fseek(file, 0, SEEK_SET);
     ftruncate(fileno(file), 0);
     for (i = 0; i < MAX_SCORES; i++) {
-        fprintf(file, "%d %s\n", scores[i].value, scores[i].name);
+        fprintf(file, "%d %s %s\n", scores[i].value, scores[i].name, scores[i].date);
     }
 
     fclose(file);
@@ -234,21 +245,22 @@ void show_scores() {
 
     // Read the scores from the file
     for (i = 0; i < MAX_SCORES; i++) {
-        if (fscanf(file, "%d %s\n", &scores[i].value, scores[i].name) != 2) {
+        if (fscanf(file, "%d %49s %49s\n", &scores[i].value, scores[i].name, scores[i].date) != 3) {
             scores[i].value = 0;
             strcpy(scores[i].name, "");
+            strcpy(scores[i].date, "");
         }
     }
 
     // Display the scores
     printf("High Scores:\n");
-    printf("-------------\n");
+    printf("%-4s %-15s %-10s %s\n", "Rank", "Name", "Score", "Date");
+    printf("----------------------------------------\n");
     for (i = 0; i < MAX_SCORES; i++) {
         if (strlen(scores[i].name) > 0) {
-            printf("%d. %s: %d\n", i+1, scores[i].name, scores[i].value);
+            printf("%-4d %-15s %-10d %s\n", i+1, scores[i].name, scores[i].value, scores[i].date);
         }
     }
 
     fclose(file);
 }
-
