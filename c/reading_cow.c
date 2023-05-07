@@ -63,6 +63,9 @@ int main(int argc, char* argv[]) {
 
     // Close the file
     fclose(file);
+
+    // Free the message
+    free(message);
 }
 
 void affiche_vache(char* eyes, char tongue, long height) {
@@ -102,34 +105,6 @@ char* repeat_string(const char* str, long N) {
     return new_str;
 }
 
-char* read_first_line(const char* file_path) {
-    FILE* file = fopen(file_path, "r");
-    if (file == NULL) {
-        printf("Error: unable to open the file %s\n", file_path);
-        return NULL;
-    }
-
-    char* line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    read = getline(&line, &len, file);
-
-    if (read == -1) {
-        printf("Error: unable to read the first line of the file %s\n", file_path);
-        free(line);
-        fclose(file);
-        return NULL;
-    }
-
-    // Remove newline character if present
-    if (line[read - 1] == '\n') {
-        line[read - 1] = '\0';
-    }
-
-    fclose(file);
-    return line;
-}
-
 // \33[H is the cursor home sequence
 // \033[J is the clear screen sequence
 void update() {
@@ -137,29 +112,47 @@ void update() {
 }
 
 void drawThoughtBox(size_t inputLength, char** substrings) {
+    // The length of the substrings array
     unsigned long lineCount = (inputLength + MAX_LINE_LENGTH - 1) / MAX_LINE_LENGTH;
 
+    // The length of each line
     unsigned long cowLineLength = (inputLength <= MAX_LINE_LENGTH ? inputLength : MAX_LINE_LENGTH) + 2;
 
-    printf(" %s\n", get_chars('_', (int) cowLineLength));
+    // Print the header
+    char* header = get_chars('_', (int) cowLineLength);
+    printf(" %s\n", header);
+
+    // For every line in substrings
     for (int i = 0; i < lineCount; i++) {
         if (i == 0) {
+            // / Text \
             printf("/ %s \\\n", substrings[i]);
         } else if (i == lineCount-1) {
+            // It's possible we won't need extraSpaces
             char* extraSpaces = "";
             unsigned long lastLineLength = strlen(substrings[i]);
+            // Generate extra spaces for padding if necessary
             if (lastLineLength < MAX_LINE_LENGTH) {
                 extraSpaces = get_chars(' ', (int) (MAX_LINE_LENGTH-lastLineLength));
             }
+            // \ Text /
             printf("\\ %s%s /\n", substrings[i], extraSpaces);
+
+            // Free dynamically allocated extra spaces
+            free(extraSpaces);
         } else {
             printf("| %s |\n", substrings[i]);
         }
 
+        // Free the line
         free(substrings[i]);
     }
 
-    printf(" %s\n", get_chars('-', (int) cowLineLength));
+    char* footer = get_chars('-', (int) cowLineLength);
+    printf(" %s\n", footer);
+
+    free(header);
+    free(footer);
 }
 
 char** split_string(char* str) {

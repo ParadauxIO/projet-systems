@@ -20,14 +20,14 @@ is available through its `man` pages.
   - new_cow.c
   - wildcow.c
   - reading_cow.c
-  - cow.c
+  - tamagoshi_cow.c
 - Appendix
   - CMakeLists.txt
   - Build Scripts
   - new_cow.c
   - wildcow.c
   - reading_cow.c
-  - cow.c
+  - tamagoshi_cow.c
 
 ## Bash
 
@@ -695,26 +695,181 @@ and pauses for 200 ms before moving on.
 
 ##### 5. Reading cow
 
-The first step to implementing the reading cow is to get the file specified by the user.
-This required an update to our main function which takes positional parameters after our
-`getopt` options:
+The first step is to take the file path provided by the user.
 ```c
-// NEW: Process files as specified by the user.
-char* file = argv[optind];
+    char* filePath = argv[1];
+    char* message = (char*) malloc(100 * sizeof(char));
+    FILE *file;
+    char ch;
+    char lastArrIndex = 0;
 
-if (file == NULL) {
-    printf("Specify a file to open.\n");
-    exit(1);
+    if (filePath == NULL) {
+        printf("Specify a file to open lol.\n");
+        exit(1);
+    }
+
+    // Open the file for reading
+    file = fopen(filePath, "r");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return 1;
+    }
+```
+
+We have basic error handling to see if the file exists at the path provided, and we initialise some variables
+for later.
+
+We also have a `message` variable which is a string of length 100 which will store the full string of what has
+been read in. 
+```c
+char* message = (char*) malloc(100 * sizeof(char));
+```
+
+Which we initialise to being the empty string: 
+```c
+strcpy(message, "");
+```
+
+Then it's just a matter of looping over every character in the file at the path provided until we reach the end
+of the file (`EOF`)
+```c
+    // Loop through every character in the file
+    while ((ch = (char) fgetc(file)) != EOF) {
+        // Do something with the character
+        update();
+
+        message[lastArrIndex] = ch;
+        lastArrIndex++;
+        char** substrings = split_string(message);
+        drawThoughtBox(strlen(message), substrings);
+        affiche_vache("oo", ch, 1);
+        sleep(1);
+    }
+```
+
+For every character in the file we add it to the message string, and increment the variable which tracks the last
+used index. Then we split the message into multiple substrings (an array of strings, which is freed later)
+
+This is then drawn in drawThoughtBox which takes the length of the message and then the array of each line in the 
+box. It then draws the cow with regular eyes, the tongue of the current character and a height of 1.
+
+```bash
+ _________
+/ bonj     \
+ ---------
+       ^__^
+      (oo)\_______
+     (__)\        )\/\
+      o  ||----w |
+         ||     ||
+paradaux@Rians-MacBook-Pro p
+```
+
+For this we implemented a substrings function which takes a string which is too long to fit into one line and splits
+it across multiple lines. 
+```c
+char** split_string(char* str) {
+    const int MAX_LEN = 39;
+    unsigned long len = strlen(str);
+    int start = 0;
+    unsigned long substr_count = (len + MAX_LEN - 1) / MAX_LEN; // calculer le nombre de sous-chaînes nécessaires
+    char** substrs = (char**) malloc(substr_count * sizeof(char*)); // allouer de la mémoire pour le tableau de sous-chaînes
+
+    if (!substrs) {
+        printf("Erreur: Impossible d'allouer de la mémoire.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < substr_count; i++) {
+        unsigned long copy_len = len - start > MAX_LEN ? MAX_LEN : len - start;
+        substrs[i] = (char*) malloc((copy_len + 1) * sizeof(char)); // Pour la sous-chaîne
+        if (!substrs[i]) {
+            printf("Erreur: Impossible d'allouer de la mémoire. (II)\n");
+            exit(EXIT_FAILURE);
+        }
+
+        strncpy(substrs[i], str + start, copy_len);
+        substrs[i][copy_len] = '\0';
+        start += MAX_LEN;
+    }
+
+    return substrs;
 }
 ```
 
-### cow.c
-    This section asked us to make a Tamagotchi game. Below is what we were required to implement and the relevant code.
+We also defined a drawThoughtBox function which mimics the thought box that cowsay implements:
+```c
+void drawThoughtBox(size_t inputLength, char** substrings) {
+    // The length of the substrings array
+    unsigned long lineCount = (inputLength + MAX_LINE_LENGTH - 1) / MAX_LINE_LENGTH;
+
+    // The length of each line
+    unsigned long cowLineLength = (inputLength <= MAX_LINE_LENGTH ? inputLength : MAX_LINE_LENGTH) + 2;
+
+    // Print the header
+    char* header = get_chars('_', (int) cowLineLength);
+    printf(" %s\n", header);
+
+    // For every line in substrings
+    for (int i = 0; i < lineCount; i++) {
+        if (i == 0) {
+            // / Text \
+            printf("/ %s \\\n", substrings[i]);
+        } else if (i == lineCount-1) {
+            // It's possible we won't need extraSpaces
+            char* extraSpaces = "";
+            unsigned long lastLineLength = strlen(substrings[i]);
+            // Generate extra spaces for padding if necessary
+            if (lastLineLength < MAX_LINE_LENGTH) {
+                extraSpaces = get_chars(' ', (int) (MAX_LINE_LENGTH-lastLineLength));
+            }
+            // \ Text /
+            printf("\\ %s%s /\n", substrings[i], extraSpaces);
+
+            // Free dynamically allocated extra spaces
+            free(extraSpaces);
+        } else {
+            printf("| %s |\n", substrings[i]);
+        }
+
+        // Free the line
+        free(substrings[i]);
+    }
+
+    char* footer = get_chars('-', (int) cowLineLength);
+    printf(" %s\n", footer);
+
+    free(header);
+    free(footer);
+}
+```
+
+It uses a get_chars function (defined below) to get a particular number of characters repeated. 
+```c
+// Prenez un caractère et un nombre et renvoyez une chaîne contenant autant de copies du caractère
+char* get_chars(char c, int n) {
+    char* str = (char*) malloc(sizeof(char) * (n + 1));
+
+    // Remplir la chaîne
+    for (int i = 0; i < n; i++) {
+        str[i] = c;
+    }
+
+    // "Null Terminate" la chaîne
+    str[n] = '\0';
+    return str;
+}
+```
+
+We made sure to free memory any time we used malloc.
+
+### tamagoshi_cow.c
+This section asked us to make a Tamagotchi game. Below is what we were required to implement and the relevant code.
 
 #### 1. Re-run the print cow routine you set up earlier
-    Take the cow's state of health as a parameter (for example byebyelife=0 for "deceased"),
-    lifesucks=1 for "not feeling well" and liferocks=2 for "in great shape"). display
-    of the cow will be different for each state (it's up to you to imagine a meaningful representation!).
+Take the cow's state of health as a parameter (for example byebyelife=0 for "deceased"),
+lifesucks=1 for "not feeling well" and liferocks=2 for "in great shape"). display
+of the cow will be different for each state (it's up to you to imagine a meaningful representation!).
 
 ```c
 // Cow ASCII art
@@ -745,7 +900,8 @@ void affiche_vache(char* title, char* eyes, char* tongue) {
 ```
 
 #### 2. Create the two global variables stock and health, both of which are integers between 0 and 10 and initialized to 5.
-     We also clamp the values of stock and health to be between 0 and 10.
+We also clamp the values of stock and health to be between 0 and 10.
+
 ```c
 // Min - Max food stock levels
 #define MIN_STOCK 0
@@ -768,12 +924,11 @@ int main() {
 ```
 
 #### 3. create two routines stock update() and fitness update() 
-        Update the variables stock and fitness, respectively. Both functions will take as argument the quantity
-        of lunchfood allocated to the cow by the player and will return the amount
-        day taking into account the random evolution of the level of fitness of the cow and the stock
-        (due to crop and digestion variables). To do this, we can use the rand() function.
-        as follows (remember to initialize it at least once):
 
+Update the variables stock and fitness, respectively. Both functions will take as argument the quantity
+of lunchfood allocated to the cow by the player and will return the amount day taking into account the random evolution
+of the level of fitness of the cow and the stock (due to crop and digestion variables). To do this, we can use the 
+rand() function. as follows (remember to initialize it at least once):
 ```c
         //function to generate a random number within the given range
         int rand_range(int lower, int upper) {
@@ -799,18 +954,15 @@ int main() {
 ```
 
 #### 4. Loop that will only terminate when the cow enters the byebyelife state. 
-        In this loop, each iteration:
-        (a) displays your Tagmagoshi cow in its current state.
-        The player never has access to the value of the fitness variable
-        (otherwise the game would be useless), but the cow's state is visible through the cow's display
-        (b) displays the status of the stock variable.
-        (c) then asks the user to enter an amount of food (less than or equal to
-        to the stock size of the reserve) to be allocated to the cow.
-        (d) updates stock and body condition variables as well as stock and cow status.
-        (e) increments a lifetime variable that counts the number of passes inside
-        of the loop.
-
-        
+In this loop, each iteration:
+1. displays your Tagmagoshi cow in its current state.
+The player never has access to the value of the fitness variable
+(otherwise the game would be useless), but the cow's state is visible through the cow's display
+2. displays the status of the stock variable.
+3. then asks the user to enter an amount of food (less than or equal to
+to the stock size of the reserve) to be allocated to the cow.
+4. updates stock and body condition variables as well as stock and cow status.
+5. increments a lifetime variable that counts the number of passes inside of the loop.
 
 ```c
 int main() {
@@ -947,13 +1099,16 @@ int main() {
     show_scores();
 }
 ```
+
 #### 5. Extra features
-        We added a highscore system that tracks the top 5 highest scores in a scores.txt file, saving
-        player name, date of score and their ranking.
-        We added random events such as the cow being fired/promoted from the cow job, this impacts
-        their stock. 
-        We also added small improvements throughout the code such as error handling for input,
-        different end messages for overfeeding/starving cows and clearing and formatting the terminal.
+We added a highscore system that tracks the top 5 highest scores in a scores.txt file, saving
+player name, date of score and their ranking.
+
+We added random events such as the cow being fired/promoted from the cow job, this impacts
+their stock. 
+
+We also added small improvements throughout the code such as error handling for input,
+different end messages for overfeeding/starving cows and clearing and formatting the terminal.
 
 #### Score system
 
@@ -1082,7 +1237,6 @@ void show_scores() {
 ## Appendex
 
 Here you can find the full source code for each C file, as well as our build scripts and CMake file.
-
 
 ### CMakeLists.txt
 
@@ -1569,7 +1723,7 @@ void update() {
 }
 ```
 
-### cow.c
+### tamagoshi_cow.c
 ```c
 #include <stdio.h>
 #include <time.h>
