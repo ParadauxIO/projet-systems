@@ -1,6 +1,4 @@
 # Projet Cowsay
-TODO translate
-
 Dans ce projet, nous apprenons et réimplémentons Cowsay. C'était à l'origine un projet perl
 lancé par son auteur dans le but d'apprendre le langage de programmation, ce projet est maintenant
 largement non maintenu mais son code source est facilement disponible en ligne, et sa documentation
@@ -20,14 +18,14 @@ est disponible via son pages `man`.
   - new_cow.c
   - wildcow.c
   - reading_cow.c
-  - cow.c
+  - tamagoshi_cow.c
 - Appendix
   - CMakeLists.txt
   - Build Scripts
   - new_cow.c
   - wildcow.c
   - reading_cow.c
-  - cow.c
+  - tamagoshi_cow.c
 
 ## Bash
 
@@ -692,28 +690,184 @@ et fait une pause de 200 ms avant de continuer.
 
 ##### 5. Reading cow
 
-La première étape pour implémenter la vache de lecture est d'obtenir le fichier spécifié par l'utilisateur.
-Cela a nécessité une mise à jour de notre fonction principale qui prend des paramètres de position après notre
-Options `getopt` :
+La première étape consiste à prendre le chemin d'accès au fichier fourni par l'utilisateur.
 ```c
-// NOUVEAU : Traitez les fichiers comme spécifié par l'utilisateur.
-char* file = argv[optind];
+    char* filePath = argv[1];
+    char* message = (char*) malloc(100 * sizeof(char));
+    FILE *file;
+    char ch;
+    char lastArrIndex = 0;
 
-if (file == NULL) {
-    printf("Specify a file to open.\n");
-    exit(1);
+    if (filePath == NULL) {
+        printf("Specify a file to open lol.\n");
+        exit(1);
+    }
+
+    // Open the file for reading
+    file = fopen(filePath, "r");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return 1;
+    }
+```
+
+Nous avons une gestion d'erreur basique pour voir si le fichier existe au chemin fourni, et nous initialisons quelques variables
+pour plus tard.
+
+Nous avons aussi une variable `message` qui est une chaîne de longueur 100 qui stockera la chaîne complète de ce qui a été lu.
+a été lu.
+```c
+char* message = (char*) malloc(100 * sizeof(char));
+```
+que nous initialisons comme étant la chaîne vide :
+```c
+strcpy(message, "");
+```
+
+Il suffit ensuite de parcourir en boucle chaque caractère du fichier au chemin fourni jusqu'à la fin du fichier (`EOF`).
+du fichier (`EOF`)
+```c
+    // Loop through every character in the file
+    while ((ch = (char) fgetc(file)) != EOF) {
+        // Do something with the character
+        update();
+
+        message[lastArrIndex] = ch;
+        lastArrIndex++;
+        char** substrings = split_string(message);
+        drawThoughtBox(strlen(message), substrings);
+        affiche_vache("oo", ch, 1);
+        sleep(1);
+    }
+```
+
+Pour chaque caractère du fichier, nous l'ajoutons à la chaîne de messages et nous incrémentons la variable qui suit le dernier indice utilisé.
+utilisé. Ensuite, nous divisons le message en plusieurs sous-chaînes (un tableau de chaînes, qui sera libéré plus tard).
+
+Ceci est ensuite dessiné dans drawThoughtBox qui prend la longueur du message et ensuite le tableau de chaque ligne dans la boîte.
+boîte. Il dessine ensuite la vache avec des yeux réguliers, la langue du personnage courant et une hauteur de 1.
+
+```bash
+ _________
+/ bonj     \
+ ---------
+       ^__^
+      (oo)\_______
+     (__)\        )\/\
+      o  ||----w |
+         ||     ||
+paradaux@Rians-MacBook-Pro p
+```
+
+Pour ce faire, nous avons implémenté une fonction substrings qui prend une chaîne trop longue pour tenir sur une seule 
+ligne et la divise en plusieurs lignes.
+
+```c
+char** split_string(char* str) {
+    const int MAX_LEN = 39;
+    unsigned long len = strlen(str);
+    int start = 0;
+    unsigned long substr_count = (len + MAX_LEN - 1) / MAX_LEN; // calculer le nombre de sous-chaînes nécessaires
+    char** substrs = (char**) malloc(substr_count * sizeof(char*)); // allouer de la mémoire pour le tableau de sous-chaînes
+
+    if (!substrs) {
+        printf("Erreur: Impossible d'allouer de la mémoire.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < substr_count; i++) {
+        unsigned long copy_len = len - start > MAX_LEN ? MAX_LEN : len - start;
+        substrs[i] = (char*) malloc((copy_len + 1) * sizeof(char)); // Pour la sous-chaîne
+        if (!substrs[i]) {
+            printf("Erreur: Impossible d'allouer de la mémoire. (II)\n");
+            exit(EXIT_FAILURE);
+        }
+
+        strncpy(substrs[i], str + start, copy_len);
+        substrs[i][copy_len] = '\0';
+        start += MAX_LEN;
+    }
+
+    return substrs;
 }
 ```
 
-#### cow.c
+Nous avons également défini une fonction drawThoughtBox qui imite la boîte à idées mise en œuvre par cowsay :
+
+```c
+void drawThoughtBox(size_t inputLength, char** substrings) {
+    // The length of the substrings array
+    unsigned long lineCount = (inputLength + MAX_LINE_LENGTH - 1) / MAX_LINE_LENGTH;
+
+    // The length of each line
+    unsigned long cowLineLength = (inputLength <= MAX_LINE_LENGTH ? inputLength : MAX_LINE_LENGTH) + 2;
+
+    // Print the header
+    char* header = get_chars('_', (int) cowLineLength);
+    printf(" %s\n", header);
+
+    // For every line in substrings
+    for (int i = 0; i < lineCount; i++) {
+        if (i == 0) {
+            // / Text \
+            printf("/ %s \\\n", substrings[i]);
+        } else if (i == lineCount-1) {
+            // It's possible we won't need extraSpaces
+            char* extraSpaces = "";
+            unsigned long lastLineLength = strlen(substrings[i]);
+            // Generate extra spaces for padding if necessary
+            if (lastLineLength < MAX_LINE_LENGTH) {
+                extraSpaces = get_chars(' ', (int) (MAX_LINE_LENGTH-lastLineLength));
+            }
+            // \ Text /
+            printf("\\ %s%s /\n", substrings[i], extraSpaces);
+
+            // Free dynamically allocated extra spaces
+            free(extraSpaces);
+        } else {
+            printf("| %s |\n", substrings[i]);
+        }
+
+        // Free the line
+        free(substrings[i]);
+    }
+
+    char* footer = get_chars('-', (int) cowLineLength);
+    printf(" %s\n", footer);
+
+    free(header);
+    free(footer);
+}
+```
+
+Il utilise une fonction get_chars (définie ci-dessous) pour obtenir un nombre particulier de caractères répétés.
+```c
+// Prenez un caractère et un nombre et renvoyez une chaîne contenant autant de copies du caractère
+char* get_chars(char c, int n) {
+    char* str = (char*) malloc(sizeof(char) * (n + 1));
+
+    // Remplir la chaîne
+    for (int i = 0; i < n; i++) {
+        str[i] = c;
+    }
+
+    // "Null Terminate" la chaîne
+    str[n] = '\0';
+    return str;
+}
+```
+
+Nous avons veillé à libérer de la mémoire chaque fois que nous avons utilisé malloc.
+
+#### tamagoshi_cow.c
 
 ### cow.c
-    Cette section nous demandait de faire un jeu Tamagotchi. Vous trouverez ci-dessous ce que nous devions mettre en œuvre et le code correspondant.
+  Cette section nous demandait de faire un jeu Tamagotchi. Vous trouverez ci-dessous ce que nous devions mettre en œuvre et le code correspondant.
 
 #### 1. Réexécutez la routine d'impression de la vache que vous avez configurée précédemment
-    Prendre l'état de santé de la vache comme paramètre (par exemple byebyelife=0 pour "décédé"),
-    lifesucks=1 pour "ne pas se sentir bien" et liferocks=2 pour "en pleine forme"). afficher
-    de la vache sera différent pour chaque état (à vous d'imaginer une représentation significative !).
+Prendre l'état de santé de la vache comme paramètre (par exemple byebyelife=0 pour "décédé"),
+lifesucks=1 pour "ne pas se sentir bien" et liferocks=2 pour "en pleine forme"). afficher
+de la vache sera différent pour chaque état (à vous d'imaginer une représentation significative !).
 
 ```c
 // Cow ASCII art
@@ -744,7 +898,8 @@ void affiche_vache(char* title, char* eyes, char* tongue) {
 ```
 
 #### 2. Créez les deux variables globales stock et santé, qui sont toutes deux des entiers compris entre 0 et 10 et initialisées à 5.
-     Nous fixons également les valeurs de stock et de santé entre 0 et 10.
+Nous fixons également les valeurs de stock et de santé entre 0 et 10.
+
 ```c
 // Min - Max food stock levels
 #define MIN_STOCK 0
@@ -767,11 +922,11 @@ int main() {
 ```
 
 #### 3. créer deux routines stock update() et fitness update()
-        Mettez à jour les variables stock et fitness, respectivement. Les deux fonctions prendront comme argument la quantité
-        de lunchfood alloué à la vache par le joueur et rendra le montant
-        jour en tenant compte de l'évolution aléatoire du niveau d'aptitude de la vache et du cheptel
-        (en raison des variables de culture et de digestion). Pour ce faire, nous pouvons utiliser la fonction rand().
-        comme suit (pensez à l'initialiser au moins une fois) :
+Mettez à jour les variables stock et fitness, respectivement. Les deux fonctions prendront comme argument la quantité
+de lunchfood alloué à la vache par le joueur et rendra le montant
+jour en tenant compte de l'évolution aléatoire du niveau d'aptitude de la vache et du cheptel
+(en raison des variables de culture et de digestion). Pour ce faire, nous pouvons utiliser la fonction rand().
+comme suit (pensez à l'initialiser au moins une fois)
 
 ```c
         //function to generate a random number within the given range
@@ -798,18 +953,16 @@ int main() {
 ```
 
 #### 4. Boucle qui ne se terminera que lorsque la vache entrera dans l'état byebyelife.
-        Dans cette boucle, chaque itération :
-         (a) affiche votre vache Tagmagoshi dans son état actuel.
-         Le joueur n'a jamais accès à la valeur de la variable fitness
-         (sinon le jeu serait inutile), mais l'état de la vache est visible à travers l'affichage de la vache
-         (b) affiche l'état de la variable de stock.
-         (c) demande ensuite à l'utilisateur d'entrer une quantité de nourriture (inférieure ou égale à
-         à la taille du stock de la réserve) à affecter à la vache.
-         (d) met à jour les variables du stock et de l'état corporel ainsi que l'état du stock et des vaches.
-         (e) incrémente une variable de durée de vie qui compte le nombre de passages à l'intérieur
-         de la boucle.
-
-        
+Dans cette boucle, chaque itération :
+1. affiche votre vache Tagmagoshi dans son état actuel.
+ Le joueur n'a jamais accès à la valeur de la variable fitness
+ (sinon le jeu serait inutile), mais l'état de la vache est visible à travers l'affichage de la vache
+2.  affiche l'état de la variable de stock.
+3.  demande ensuite à l'utilisateur d'entrer une quantité de nourriture (inférieure ou égale à
+ à la taille du stock de la réserve) à affecter à la vache.
+4. met à jour les variables du stock et de l'état corporel ainsi que l'état du stock et des vaches.
+5. incrémente une variable de durée de vie qui compte le nombre de passages à l'intérieur
+ de la boucle.
 
 ```c
 int main() {
@@ -947,11 +1100,11 @@ int main() {
 }
 ```
 #### 5. Fonctionnalités supplémentaires
-        Nous avons ajouté un système de meilleurs scores qui suit les 5 meilleurs scores les plus élevés dans un fichier scores.txt, en économisant le nom du joueur, la date du score et son classement.
-        Nous avons ajouté des événements aléatoires tels que la vache licenciée / promue du travail de la vache, cela a un impact
-        leur stock.
-        Nous avons également ajouté de petites améliorations dans tout le code telles que la gestion des erreurs pour l'entrée,
-        différents messages de fin pour les vaches suralimentées/affamées et le nettoyage et le formatage du terminal.
+Nous avons ajouté un système de meilleurs scores qui suit les 5 meilleurs scores les plus élevés dans un fichier scores.txt, en économisant le nom du joueur, la date du score et son classement.
+Nous avons ajouté des événements aléatoires tels que la vache licenciée / promue du travail de la vache, cela a un impact
+leur stock.
+Nous avons également ajouté de petites améliorations dans tout le code telles que la gestion des erreurs pour l'entrée,
+différents messages de fin pour les vaches suralimentées/affamées et le nettoyage et le formatage du terminal.
 
 #### Système de pointage
 
@@ -1080,7 +1233,6 @@ void show_scores() {
 ## Annexe
 
 Vous trouverez ici le code source complet de chaque fichier C, ainsi que nos scripts de construction et le fichier CMake.
-
 
 ### CMakeLists.txt
 
@@ -1262,73 +1414,72 @@ char* read_first_line(const char* file_path) {
 
 #define true 1
 
-const char* COW_FORMAT =
-        "       ^__^\n"
-        "      (%s)\\_______\n" // Eyes
-        "     (__)\\        )\\/\\\n"
-        "      %s ||----w |\n" // Tongue
-        "%s"; // Variable Height
+const char* COW_FORMAT[5] = {
+        "       ^__^\n",
+        "      (%s)\\_______\n", // Eyes
+        "     (__)\\        )\\/\\\n",
+        "      %c  ||----w |\n", // Tongue
+        "%s" // Variable Height
+};
 
-const char *COW_LEG_LINE =
-    "         ||     ||\n";
+const char *COW_LEG_LINE[3] = {
+        "       ||     ||\n",
+        "        ||     ||\n",
+        "         ||     ||\n"
+};
 
 const int MAX_LINE_LENGTH = 100;
 
 char* repeat_string(const char* str, long N);
-void affiche_vache(char* eyes, char* tongue, long height);
+void affiche_vache(char* eyes, char tongue, long height);
+void update();
+char** split_string(char* str);
+char* get_chars(char c, int n);
+void drawThoughtBox(size_t inputLength, char** substrings);
 
 int main(int argc, char* argv[]) {
-    int option;
-    char* valeurE = "oo";
-    char* valeurT = "  ";
-    long valeurHeight = 1;
-    char* endptr; // used in str to long conversion
-    while ((option = getopt(argc, argv, "e:T:H:h")) != -1) {
-        switch (option) {
-            // Eye String
-            case 'e':
-                valeurE = optarg;
-                break;
+    char* filePath = argv[1];
+    char* message = (char*) malloc(100 * sizeof(char));
+    FILE *file;
+    char ch;
+    char lastArrIndex = 0;
 
-                // Tongue String
-            case 'T':
-                valeurT = optarg;
-                break;
-
-            case 'H':
-                valeurHeight = strtol(optarg, &endptr, 10);
-
-                // If there was an error converting the string
-                if (*endptr != '\0') {
-                    fprintf(stderr, "Error converting %s to a long.\n", optarg);
-                    exit(1);
-                }
-                break;
-
-                // Help / Usage Instructions.
-            case 'h':
-                printf("Usage: %s -e [v] -T [v] -h\n", argv[0]);
-                exit(0);
-                break;
-
-            default:
-                fprintf(stderr, "Usage: %s -e [v] -T [v] -h\n", argv[0]);
-                return 1;
-        }
-    }
-
-    affiche_vache(valeurE, valeurT, valeurHeight);
-    return 0;
-}
-
-void affiche_vache(char* eyes, char* tongue, long height) {
-    if (strlen(eyes) != 2) {
-        fprintf(stderr, "Invalid eyes: %s. Must be exactly 2 characters.\n", eyes);
+    if (filePath == NULL) {
+        printf("Specify a file to open lol.\n");
         exit(1);
     }
 
-    if (strlen(tongue) != 2) {
-        fprintf(stderr, "Invalid Tongue: %s. Must be exactly 2 characters.\n", tongue);
+    // Open the file for reading
+    file = fopen(filePath, "r");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return 1;
+    }
+
+    strcpy(message, "");
+    // Loop through every character in the file
+    while ((ch = (char) fgetc(file)) != EOF) {
+        // Do something with the character
+        update();
+
+        message[lastArrIndex] = ch;
+        lastArrIndex++;
+        char** substrings = split_string(message);
+        drawThoughtBox(strlen(message), substrings);
+        affiche_vache("oo", ch, 1);
+        sleep(1);
+    }
+
+    // Close the file
+    fclose(file);
+
+    // Free the message
+    free(message);
+}
+
+void affiche_vache(char* eyes, char tongue, long height) {
+    if (strlen(eyes) != 2) {
+        fprintf(stderr, "Invalid eyes: %s. Must be exactly 2 characters.\n", eyes);
         exit(1);
     }
 
@@ -1337,8 +1488,12 @@ void affiche_vache(char* eyes, char* tongue, long height) {
         exit(1);
     }
 
-    char* legs = repeat_string(COW_LEG_LINE, height);
-    printf(COW_FORMAT, eyes, tongue, legs);
+    char* legs = repeat_string(COW_LEG_LINE[2], height);
+    printf("%s", COW_FORMAT[0]);
+    printf(COW_FORMAT[1], eyes);
+    printf("%s", COW_FORMAT[2]);
+    printf(COW_FORMAT[3], tongue);
+    printf(COW_FORMAT[4], legs);
     free(legs);
 }
 
@@ -1359,32 +1514,96 @@ char* repeat_string(const char* str, long N) {
     return new_str;
 }
 
-char* read_first_line(const char* file_path) {
-    FILE* file = fopen(file_path, "r");
-    if (file == NULL) {
-        printf("Error: unable to open the file %s\n", file_path);
-        return NULL;
+// \33[H is the cursor home sequence
+// \033[J is the clear screen sequence
+void update() {
+    printf("\033[2J"); // clear the screen
+}
+
+void drawThoughtBox(size_t inputLength, char** substrings) {
+    // The length of the substrings array
+    unsigned long lineCount = (inputLength + MAX_LINE_LENGTH - 1) / MAX_LINE_LENGTH;
+
+    // The length of each line
+    unsigned long cowLineLength = (inputLength <= MAX_LINE_LENGTH ? inputLength : MAX_LINE_LENGTH) + 2;
+
+    // Print the header
+    char* header = get_chars('_', (int) cowLineLength);
+    printf(" %s\n", header);
+
+    // For every line in substrings
+    for (int i = 0; i < lineCount; i++) {
+        if (i == 0) {
+            // / Text \
+            printf("/ %s \\\n", substrings[i]);
+        } else if (i == lineCount-1) {
+            // It's possible we won't need extraSpaces
+            char* extraSpaces = "";
+            unsigned long lastLineLength = strlen(substrings[i]);
+            // Generate extra spaces for padding if necessary
+            if (lastLineLength < MAX_LINE_LENGTH) {
+                extraSpaces = get_chars(' ', (int) (MAX_LINE_LENGTH-lastLineLength));
+            }
+            // \ Text /
+            printf("\\ %s%s /\n", substrings[i], extraSpaces);
+
+            // Free dynamically allocated extra spaces
+            free(extraSpaces);
+        } else {
+            printf("| %s |\n", substrings[i]);
+        }
+
+        // Free the line
+        free(substrings[i]);
     }
 
-    char* line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    read = getline(&line, &len, file);
+    char* footer = get_chars('-', (int) cowLineLength);
+    printf(" %s\n", footer);
 
-    if (read == -1) {
-        printf("Error: unable to read the first line of the file %s\n", file_path);
-        free(line);
-        fclose(file);
-        return NULL;
+    free(header);
+    free(footer);
+}
+
+char** split_string(char* str) {
+    const int MAX_LEN = 39;
+    unsigned long len = strlen(str);
+    int start = 0;
+    unsigned long substr_count = (len + MAX_LEN - 1) / MAX_LEN; // calculer le nombre de sous-chaînes nécessaires
+    char** substrs = (char**) malloc(substr_count * sizeof(char*)); // allouer de la mémoire pour le tableau de sous-chaînes
+
+    if (!substrs) {
+        printf("Erreur: Impossible d'allouer de la mémoire.\n");
+        exit(EXIT_FAILURE);
     }
 
-    // Remove newline character if present
-    if (line[read - 1] == '\n') {
-        line[read - 1] = '\0';
+    for (int i = 0; i < substr_count; i++) {
+        unsigned long copy_len = len - start > MAX_LEN ? MAX_LEN : len - start;
+        substrs[i] = (char*) malloc((copy_len + 1) * sizeof(char)); // Pour la sous-chaîne
+        if (!substrs[i]) {
+            printf("Erreur: Impossible d'allouer de la mémoire. (II)\n");
+            exit(EXIT_FAILURE);
+        }
+
+        strncpy(substrs[i], str + start, copy_len);
+        substrs[i][copy_len] = '\0';
+        start += MAX_LEN;
     }
 
-    fclose(file);
-    return line;
+    return substrs;
+}
+
+// Prenez un caractère et un nombre et renvoyez une chaîne contenant autant de copies du caractère
+char* get_chars(char c, int n) {
+    char* str = (char*) malloc(sizeof(char) * (n + 1));
+
+    // Remplir la chaîne
+    for (int i = 0; i < n; i++) {
+        str[i] = c;
+    }
+
+    // "Null Terminate" la chaîne
+    str[n] = '\0';
+    return str;
 }
 ```
 
@@ -1563,7 +1782,7 @@ void update() {
 }
 ```
 
-### cow.c
+### tamagoshi_cow.c
 
 ```c
 #include <stdio.h>

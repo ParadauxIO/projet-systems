@@ -1,6 +1,4 @@
 # Cowsay Project
-TODO translate
-
 In this project we learn about and re-implement Cowsay. It was originally a perl project 
 started by its author in attempt to learn the programming language, this project is now 
 largely unmaintained but its source code is readily available online, and its documentation
