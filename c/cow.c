@@ -130,7 +130,7 @@ int main() {
             sprintf(event_message, "Oh no! You've been fired from your cow job at the cow factory, lose stock!\n");
             stock -= (rand_range(1, 3));
 
-            // Your cow got a promotion at their job
+        // Your cow got a promotion at their job
         } else if (rand_range(0, 100) < EVENT_PROBABILITIES[COW_JOB_PROMOTION]) {
             sprintf(event_message, "Woohoo! You've been promoted at your cow job, gain stock!\n");
             stock += (rand_range(1, 3));
