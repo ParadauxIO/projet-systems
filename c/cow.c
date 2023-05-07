@@ -40,11 +40,26 @@ int main() {
     int score = 0;
     int event = -1;
 
+    // Variables to store the messages from previous loop
+    char invalid_input_message[100] = "";
+    char event_message[100] = "";
+
     // Seed the random number generator with current time
     srand(time(NULL));
 
     // Start the game loop
     while (cow_state != EXITGAME) {
+        
+        // Clear the console, assumes unix throughout
+        system("clear"); // Unix
+
+        // Print the messages from the previous iteration
+        printf("%s%s", invalid_input_message, event_message);
+
+        // Reset the messages
+        strcpy(invalid_input_message, "");
+        strcpy(event_message, "");
+
         // Draw cow health automaton
         switch (cow_state) {
             case LIFEROCKS:
@@ -74,12 +89,12 @@ int main() {
         int lunchfood;
         
         if (sscanf(input, "%d", &lunchfood) != 1) {
-            printf("Invalid input. Enter a valid integer between 0 and %d.\n", stock);
+            sprintf(invalid_input_message, "Invalid input. Enter a valid integer between 0 and %d.\n", stock);
             continue;
         }
 
         if (lunchfood < 0 || lunchfood > stock) {
-            printf("Invalid input. Enter a value between 0 and %d.\n", stock);
+            sprintf(invalid_input_message, "Invalid input. Enter a value between 0 and %d.\n", stock);
             continue;
         }
 
@@ -105,21 +120,23 @@ int main() {
         }
 
         if (event == COWJOBFIRING) {
-            printf("Oh no! You've been fired from your cow job at the cow factory, lose stock!\n");
+            sprintf(event_message, "Oh no! You've been fired from your cow job at the cow factory, lose stock!\n");
             stock -= (rand() % 3 + 1);
         } else if (event == COWJOBPROMOTION) {
-            printf("Woohoo! You've been promoted at your cow job, gain stock!\n");
+            sprintf(event_message, "Woohoo! You've been promoted at your cow job, gain stock!\n");
             stock += (rand() % 3 + 1);
         }
 
         // Check if cow starved
         if (cow_health <= STARVING) {
+            system("clear");
             printf("Your cow starved! Game over!\n");
             cow_state = BYEBYELIFE;
             break;
         }
         // Check if cow is overfed
         if (cow_health >= OVERFED) {
+            system("clear"); 
             printf("You overfed your cow! Game over!\n");
             cow_state = BYEBYELIFE;
             break;
@@ -206,7 +223,7 @@ void save_score(int score) {
 
             // Insert the new score
             scores[i].value = score;
-            printf("Congratulations! You have a new high score of %d.\n", score);
+            printf("Congratulations! You got a new high score of %d.\n", score);
             printf("Enter your name: ");
             scanf("%s", scores[i].name);
             strcpy(scores[i].date, date_string);
